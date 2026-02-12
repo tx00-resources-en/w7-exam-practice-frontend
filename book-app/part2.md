@@ -17,7 +17,7 @@ In Part 2 you will add **user registration & login** (Iteration 6) and then **pr
 
 ### What You Will Learn
 
-- How to create **custom hooks** (`useField`, `useSignup`, `useLogin`) to encapsulate reusable logic.
+- How to manage form state with `useState` and handle form submissions with `fetch`.
 - How to store a JWT token in `localStorage` and read it back on page load.
 - How to add `Authorization: Bearer <token>` headers to protected API requests.
 - How to **conditionally render** UI elements (Navbar links, Edit/Delete buttons) based on authentication state.
@@ -27,7 +27,7 @@ In Part 2 you will add **user registration & login** (Iteration 6) and then **pr
 
 | Iteration | Feature | Backend Used | New / Changed Files |
 |---|---|---|---|
-| 6 | User signup & login | `backend-auth/` | `useField.jsx`, `useSignup.jsx`, `useLogin.jsx`, `Signup.jsx`, `Login.jsx`, `Navbar.jsx`, `App.jsx` |
+| 6 | User signup & login | `backend-auth/` | `Signup.jsx`, `Login.jsx`, `Navbar.jsx`, `App.jsx` |
 | 7 | Route protection & token headers | `backend-protect/` | `App.jsx`, `Navbar.jsx`, `Signup.jsx`, `Login.jsx`, `BookPage.jsx`, `AddBookPage.jsx`, `EditBookPage.jsx` |
 
 > **Important:** Commit your work after each iteration.
@@ -123,137 +123,55 @@ npm install
 npm run dev
 ```
 
-**New files to create:** `src/hooks/useField.jsx`, `src/hooks/useSignup.jsx`, `src/hooks/useLogin.jsx`, `src/pages/Signup.jsx`, `src/pages/Login.jsx`  
+**New files to create:** `src/pages/Signup.jsx`, `src/pages/Login.jsx`  
 **Files to change:** `src/App.jsx`, `src/components/Navbar.jsx`
 
-#### Step A — Create the `useField` custom hook
+#### Step A — Create the Signup page
 
-Create a new file `src/hooks/useField.jsx`. This hook manages a single form input's state so you don't have to repeat `useState` + `onChange` for every field:
-
-```jsx
-import { useState } from "react";
-
-export default function useField(type) {
-  const [value, setValue] = useState("");
-
-  const onChange = (e) => {
-    setValue(e.target.value);
-  };
-
-  return { type, value, onChange };
-}
-```
-
-> **Why a custom hook?** In earlier iterations you wrote a separate `useState` + `onChange` for every form field. `useField` bundles that logic into one line per field. You can spread the returned object directly onto an `<input>`: `<input {...email} />` — this sets `type`, `value`, and `onChange` all at once.
-
-#### Step B — Create the `useSignup` custom hook
-
-Create `src/hooks/useSignup.jsx`. This hook sends a POST request to the signup endpoint and stores the returned user (email + token) in `localStorage`:
+Create `src/pages/Signup.jsx`. This page uses `useState` for each form field and sends a POST request to the signup endpoint. On success, the returned user (email + token) is saved to `localStorage`:
 
 ```jsx
 import { useState } from "react";
-
-export default function useSignup(url) {
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(null);
-
-  const signup = async (object) => {
-    setIsLoading(true);
-    setError(null);
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(object),
-    });
-    const user = await response.json();
-
-    if (!response.ok) {
-      setError(user.error);
-      setIsLoading(false);
-      return;
-    }
-
-    localStorage.setItem("user", JSON.stringify(user));
-    setIsLoading(false);
-  };
-
-  return { signup, isLoading, error };
-}
-```
-
-> **Key concept:** `localStorage.setItem("user", JSON.stringify(user))` saves the object `{ email, token }` so it persists across page refreshes. You can read it back later with `JSON.parse(localStorage.getItem("user"))`.
-
-#### Step C — Create the `useLogin` custom hook
-
-Create `src/hooks/useLogin.jsx`. This is almost identical to `useSignup`:
-
-```jsx
-import { useState } from "react";
-
-export default function useLogin(url) {
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(null);
-
-  const login = async (object) => {
-    setIsLoading(true);
-    setError(null);
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(object),
-    });
-    const user = await response.json();
-
-    if (!response.ok) {
-      setError(user.error);
-      setIsLoading(false);
-      return;
-    }
-
-    localStorage.setItem("user", JSON.stringify(user));
-    setIsLoading(false);
-  };
-
-  return { login, isLoading, error };
-}
-```
-
-#### Step D — Create the Signup page
-
-Create `src/pages/Signup.jsx`. This page uses the `useField` and `useSignup` hooks:
-
-```jsx
-import useField from "../hooks/useField";
-import useSignup from "../hooks/useSignup";
 import { useNavigate } from "react-router-dom";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const name = useField("text");
-  const email = useField("email");
-  const password = useField("password");
-  const phoneNumber = useField("text");
-  const gender = useField("text");
-  const dateOfBirth = useField("date");
-  const membershipStatus = useField("text");
-
-  const { signup, error } = useSignup("/api/users/signup");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [gender, setGender] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [membershipStatus, setMembershipStatus] = useState("");
+  const [error, setError] = useState(null);
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    await signup({
-      email: email.value,
-      password: password.value,
-      name: name.value,
-      phone_number: phoneNumber.value,
-      gender: gender.value,
-      date_of_birth: dateOfBirth.value,
-      membership_status: membershipStatus.value,
+    setError(null);
+
+    const response = await fetch("/api/users/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password,
+        name,
+        phone_number: phoneNumber,
+        gender,
+        date_of_birth: dateOfBirth,
+        membership_status: membershipStatus,
+      }),
     });
-    if (!error) {
-      console.log("success");
-      navigate("/");
+    const user = await response.json();
+
+    if (!response.ok) {
+      setError(user.error);
+      return;
     }
+
+    localStorage.setItem("user", JSON.stringify(user));
+    console.log("success");
+    navigate("/");
   };
 
   return (
@@ -261,20 +179,21 @@ const Signup = () => {
       <h2>Sign Up</h2>
       <form onSubmit={handleFormSubmit}>
         <label>Name:</label>
-        <input {...name} />
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
         <label>Email address:</label>
-        <input {...email} />
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <label>Password:</label>
-        <input {...password} />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <label>Phone Number:</label>
-        <input {...phoneNumber} />
+        <input type="text" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
         <label>Gender:</label>
-        <input {...gender} />
+        <input type="text" value={gender} onChange={(e) => setGender(e.target.value)} />
         <label>Date of Birth:</label>
-        <input {...dateOfBirth} />
+        <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
         <label>Membership Status:</label>
-        <input {...membershipStatus} />
+        <input type="text" value={membershipStatus} onChange={(e) => setMembershipStatus(e.target.value)} />
         <button>Sign up</button>
+        {error && <p className="error">{error}</p>}
       </form>
     </div>
   );
@@ -283,31 +202,41 @@ const Signup = () => {
 export default Signup;
 ```
 
-> **Notice:** Instead of writing `value={email.value} onChange={email.onChange} type={email.type}` we just spread: `<input {...email} />`. This is the benefit of the `useField` hook.
+> **Key concept:** `localStorage.setItem("user", JSON.stringify(user))` saves the object `{ email, token }` so it persists across page refreshes. You can read it back later with `JSON.parse(localStorage.getItem("user"))`.
 
-#### Step E — Create the Login page
+#### Step B — Create the Login page
 
 Create `src/pages/Login.jsx`:
 
 ```jsx
-import useField from "../hooks/useField";
-import useLogin from "../hooks/useLogin";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
-  const email = useField("email");
-  const password = useField("password");
-
-  const { login, error } = useLogin("/api/users/login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    await login({ email: email.value, password: password.value });
-    if (!error) {
-      console.log("success");
-      navigate("/");
+    setError(null);
+
+    const response = await fetch("/api/users/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const user = await response.json();
+
+    if (!response.ok) {
+      setError(user.error);
+      return;
     }
+
+    localStorage.setItem("user", JSON.stringify(user));
+    console.log("success");
+    navigate("/");
   };
 
   return (
@@ -315,10 +244,11 @@ const Login = () => {
       <h2>Login</h2>
       <form onSubmit={handleFormSubmit}>
         <label>Email address:</label>
-        <input {...email} />
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <label>Password:</label>
-        <input {...password} />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <button>Log in</button>
+        {error && <p className="error">{error}</p>}
       </form>
     </div>
   );
@@ -327,7 +257,7 @@ const Login = () => {
 export default Login;
 ```
 
-#### Step F — Update `App.jsx` to add auth routes
+#### Step C — Update `App.jsx` to add auth routes
 
 Import the new pages and add routes for `/signup` and `/login`:
 
@@ -372,7 +302,7 @@ export default App;
 > - Imported `Navigate`, `Login`, and `Signup`.
 > - Added two new `<Route>` entries for `/signup` and `/login`.
 
-#### Step G — Update `Navbar.jsx` with Login, Signup, and Logout links
+#### Step D — Update `Navbar.jsx` with Login, Signup, and Logout links
 
 Replace the old Navbar with one that shows Login/Signup links and a Log out button:
 
@@ -422,9 +352,8 @@ export default Navbar;
 
 **Discussion Questions:**
 
-- What is a **custom hook**? How is it different from a regular function?
 - Why do we store the token in `localStorage` instead of React state?
-- What does the spread operator (`{...email}`) do when applied to an `<input>` element?
+- What happens if the API returns an error during signup? How does the component handle it?
 
 ---
 
@@ -584,21 +513,20 @@ export default Navbar;
 
 #### Step C — Update `Signup.jsx` to set authentication state
 
-Accept `setIsAuthenticated` as a prop and call it on successful signup:
+Accept `setIsAuthenticated` as a prop and call it after a successful signup:
 
 ```jsx
 const Signup = ({ setIsAuthenticated }) => {
-  // ... same as step 6, but add this line after signup succeeds:
+  // ... same as step 6, but add this line after saving the user to localStorage:
 ```
 
-Inside `handleFormSubmit`, after `await signup(...)` and inside the `if (!error)` block, add:
+Inside `handleFormSubmit`, after `localStorage.setItem(...)`, add:
 
 ```jsx
-    if (!error) {
-      console.log("success");
-      setIsAuthenticated(true);   // <-- ADD THIS LINE
-      navigate("/");
-    }
+    localStorage.setItem("user", JSON.stringify(user));
+    console.log("success");
+    setIsAuthenticated(true);   // <-- ADD THIS LINE
+    navigate("/");
 ```
 
 #### Step D — Update `Login.jsx` to set authentication state
@@ -607,17 +535,16 @@ Same pattern — accept `setIsAuthenticated` as a prop:
 
 ```jsx
 const Login = ({ setIsAuthenticated }) => {
-  // ... same as step 6, but add this line after login succeeds:
+  // ... same as step 6, but add this line after saving the user to localStorage:
 ```
 
-Inside `handleFormSubmit`, after `await login(...)` and inside the `if (!error)` block, add:
+Inside `handleFormSubmit`, after `localStorage.setItem(...)`, add:
 
 ```jsx
-    if (!error) {
-      console.log("success");
-      setIsAuthenticated(true);   // <-- ADD THIS LINE
-      navigate("/");
-    }
+    localStorage.setItem("user", JSON.stringify(user));
+    console.log("success");
+    setIsAuthenticated(true);   // <-- ADD THIS LINE
+    navigate("/");
 ```
 
 #### Step E — Send the token when adding a book (`AddBookPage.jsx`)
