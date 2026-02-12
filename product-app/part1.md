@@ -1,4 +1,4 @@
-# Frontend Pair Activity — Product Store (Beginner-Friendly)
+# Frontend Activity — Product Store (Beginner-Friendly)
 
 ## Overview
 

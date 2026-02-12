@@ -1,4 +1,4 @@
-# Frontend Pair Activity (Beginner-Friendly)
+# Frontend Activity (Beginner-Friendly)
 
 ## Overview
 

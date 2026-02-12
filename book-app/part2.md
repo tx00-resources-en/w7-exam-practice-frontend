@@ -1,4 +1,4 @@
-# Frontend Pair Activity — Part 2 (Authentication & Route Protection)
+# Frontend Activity — Part 2 (Authentication & Route Protection)
 
 ## Overview
 

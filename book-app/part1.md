@@ -1,4 +1,4 @@
-# Frontend Pair Activity — Book Library (Beginner-Friendly)
+# Frontend Activity — Book Library (Beginner-Friendly)
 
 ## Overview
 

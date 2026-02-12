@@ -1,4 +1,4 @@
-# Frontend Pair Activity — Part 3 (Refactoring with Custom Hooks)
+# Frontend Activity — Part 3 (Refactoring with Custom Hooks)
 
 ## Overview
 
